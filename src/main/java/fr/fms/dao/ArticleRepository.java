@@ -1,12 +1,16 @@
 package fr.fms.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import fr.fms.entities.Article;
+import fr.fms.entities.Category;
 
 /**
  * Interface permettant l'envoie des requêtes
@@ -53,4 +57,22 @@ public interface ArticleRepository extends JpaRepository<Article, Long>{
 	public List<Article> searchArticles(@Param("x") String kw, @Param("y") double price);
 	
 	public List<Article> findByCategoryId(Long categoryId);
+	
+	public List<Article> findByBrandAndDescription(String brand, String description);
+	
+	public void deleteById(Long id);
+	
+	/**
+	 * Méthode de mise à jour d'un article par son id dès lors qu'un des champs est modifié
+	 * @param id de l'article
+	 * @param marque de l'article
+	 * @param description de l'article
+	 * @param prix de l'article
+	 * @param categorie en relation avec l'article
+	 */
+	@Transactional
+	@Modifying
+	@Query("update Article A set A.brand = :brand, A.description = :description, A.price = :price, A.category = :categoryId where A.id = :id")
+	public void updateById(@Param("id") Long id, @Param("brand") String brand, @Param("description") String description, @Param("price") double price, @Param("categoryId") Optional<Category> category);
+	
 }
