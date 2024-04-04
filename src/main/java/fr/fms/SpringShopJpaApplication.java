@@ -42,21 +42,35 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 			switch(choice) {
 			case 1 :
 				displayArticles();
+				exitMenu();
 				break;
 			case 2:
 				break;
 			case 3:
+				addArticle();
 				break;
 			case 4:
+				displayArticle();
 				break;
 			case 5:
+				deleteArticle();
+				break;
 			case 6:
+				updateArticle();
+				break;
 			case 7:
+				break;
 			case 8:
+				break;
 			case 9:
+				break;
 			case 10:
+				break;
 			case 11:
+				break;
 			case 12:
+				System.exit(0);
+				break;
 			default:
 				System.out.println("Veuillez saisir une valeur comprise entre 1 et 12");
 			}
@@ -168,25 +182,87 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 	}
 	
 	public void displayArticles() {
-		System.out.println("EXIT  pour revenir au menu précédent");
 		List<Article> articles = articleRepository.findAll();
 		articles.forEach(System.out::println);
-		scan.next();
-		String response = scan.nextLine();
-		if(response.equalsIgnoreCase("EXIT")) {
-			displayMenu();
-		}
 	}
 	
 	public void displayPageableArticles() {
 		
 	}
 	
-	public Article displayArticle(Long id) {
-		Article article = null;
-		return article;
+	public void addArticle() {
+		scan.nextLine();
+		System.out.println("Saisir la marque de l'article");
+		String brand = scan.nextLine();
+		System.out.println("Saisir la description de l'article");
+		String description = scan.nextLine();
+		System.out.println("Saisir le prix de l'article");
+		double price = getInt();
+		displayCategories();
+		System.out.println("Saisir l'id de la catégorie de l'article");
+		Long categoryId = (long) getInt();
+		
+		articleRepository.save(new Article(brand, description, price, getCategory(categoryId)));
 	}
 	
+	public void displayArticle() {
+		displayArticles();
+		System.out.println("Saisir l'id de l'article");
+		Long articleId = (long) getInt();
+		Optional<Article> article = articleRepository.findById(articleId);
+		System.out.println(article);
+	}
+	
+	public void deleteArticle() {
+		displayArticles();
+		System.out.println("Saisir l'id de l'article à supprimer");
+		Long articleId = (long) getInt();
+		System.out.println("Voulez supprimer l'article " + articleRepository.findById(articleId).get().getBrand() + articleRepository.findById(articleId).get().getDescription());
+		scan.nextLine();
+		String response = scan.nextLine();
+		if(response.equalsIgnoreCase("Oui")) {
+			articleRepository.deleteById(articleId);
+		}else {
+			displayMenu();
+		}
+	}
+	
+	public void updateArticle() {
+		displayArticles();
+		System.out.println("Saisir l'id de l'article à modifier");
+		Long articleId = (long) getInt();
+		scan.nextLine();
+		System.out.println("Saisir la marque");
+		String brand = scan.nextLine();
+		System.out.println("Saisir la description");
+		String description = scan.nextLine();
+		System.out.println("Saisir le prix");
+		double price = getInt();
+		displayCategories();
+		System.out.println("Saisir l'id de la catégorie");
+		Long categoryId = (long) getInt();
+		
+		articleRepository.updateById(articleId, brand, description, price, getCategory(categoryId));
+	}
+	
+	public void displayCategories() {
+		List<Category> categories = categoryRepository.findAll();
+		categories.forEach(System.out::println);
+	}
+	
+	public Category getCategory(Long id) {
+		Category category = categoryRepository.getById(id);
+		return category;
+	}
+	
+	public void exitMenu() {
+		System.out.println("EXIT  pour revenir au menu précédent");
+		scan.nextLine();
+		String response = scan.nextLine();
+		if(response.equalsIgnoreCase("EXIT")) {
+			displayMenu();
+		}
+	}
 	
 	public static int getInt() {
 		if(!scan.hasNextInt()) {
