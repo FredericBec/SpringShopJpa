@@ -2,6 +2,7 @@ package fr.fms;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -24,12 +25,42 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 	@Autowired
 	private ArticleRepository articleRepository;
 	
+	private static Scanner scan = new Scanner(System.in);
+	
 	public static void main(String[] args) {
 		SpringApplication.run(SpringShopJpaApplication.class, args);
 	}
 
 	@Override
 	public void run(String... args) throws Exception {
+		
+		System.out.println("Bienvenue dans mon application de gestion d'articles");
+		int choice = 0;
+		while(choice != 13) {
+			displayMenu();
+			choice = getInt();
+			switch(choice) {
+			case 1 :
+				displayArticles();
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			case 4:
+				break;
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+			case 10:
+			case 11:
+			case 12:
+			default:
+				System.out.println("Veuillez saisir une valeur comprise entre 1 et 12");
+			}
+		}
 		
 		//Exo 1.1
 		//articleRepository.save(new Article((long) 1, "Samsung", "S9", 250));
@@ -94,6 +125,7 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		//articleRepository.updateById((long) 9, "Msi", "Crosshair 17", 2000, pc);
 		
 		//1.6
+		/*
 		for(Category category : categoryRepository.findByOrderByNameAsc()) {
 			System.out.println(category);
 		}
@@ -107,7 +139,62 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		articlesAsc.forEach(System.out::println);
 		System.out.println("-------------------");
 		articlesDesc.forEach(System.out::println);
+		 */
+		
+		//1.7
+		/*
+		for(Article article : articleRepository.findByBrandNotLikeOrderByBrand("Samsung")) {
+			System.out.println(article);
+		}
+		*/
 	}
-
 	
+	public static void displayMenu() {
+		System.out.println("1 : Afficher tous les articles sans pagination");
+		System.out.println("2 : Afficher tous les articles avec pagination");
+		System.out.println("*************************");
+		System.out.println("3 : Ajouter un article");
+		System.out.println("4 : Afficher un article");
+		System.out.println("5 : Supprimer un article");
+		System.out.println("6 : Modifier un article");
+		System.out.println("*************************");
+		System.out.println("7 : Ajouter une catégorie");
+		System.out.println("8 : Afficher une catégorie");
+		System.out.println("9 : Supprimer une catégorie");
+		System.out.println("10: Mettre à jour une catégorie");
+		System.out.println("11: Afficher tous les articles d'une catégorie");
+		System.out.println("*************************");
+		System.out.println("12: Sortir du programme");
+	}
+	
+	public void displayArticles() {
+		System.out.println("EXIT  pour revenir au menu précédent");
+		List<Article> articles = articleRepository.findAll();
+		articles.forEach(System.out::println);
+		scan.next();
+		String response = scan.nextLine();
+		if(response.equalsIgnoreCase("EXIT")) {
+			displayMenu();
+		}
+	}
+	
+	public void displayPageableArticles() {
+		
+	}
+	
+	public Article displayArticle(Long id) {
+		Article article = null;
+		return article;
+	}
+	
+	
+	public static int getInt() {
+		if(!scan.hasNextInt()) {
+			System.out.println("Saississez une valeur entière !!");
+			scan.next();
+		}
+		
+		return scan.nextInt();
+	} 
+
 }
