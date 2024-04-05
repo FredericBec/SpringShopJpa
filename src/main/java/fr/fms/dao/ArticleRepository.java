@@ -3,6 +3,8 @@ package fr.fms.dao;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -72,7 +74,11 @@ public interface ArticleRepository extends JpaRepository<Article, Long>{
 	 */
 	@Transactional
 	@Modifying
-	@Query("update Article A set A.brand = :brand, A.description = :description, A.price = :price, A.category = :categoryId where A.id = :id")
-	public void updateById(@Param("id") Long id, @Param("brand") String brand, @Param("description") String description, @Param("price") double price, @Param("categoryId") Optional<Category> category);
+	@Query("update Article A set A.brand = :brand, A.description = :description, A.price = :price where A.id = :id")
+	public void updateById(@Param("id") Long id, @Param("brand") String brand, @Param("description") String description, @Param("price") double price);
+	
+	public List<Article> findByBrandNotLikeOrderByBrand(String brand);
+	
+	public Page<Article> findAll(Pageable pageable);
 	
 }
