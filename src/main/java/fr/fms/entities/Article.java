@@ -11,6 +11,8 @@ import javax.persistence.ManyToOne;
 @Entity
 public class Article implements Serializable{
 	private static final long serialVersionUID = 1L;
+
+	private static final int MAX_STRING_LENGTH = 30;
 	
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;
@@ -77,19 +79,18 @@ public class Article implements Serializable{
 		this.price = price;
 	}
 	
-	public static String centerString(int width, String s) {
-		return String.format("%-" + width + "s", String.format("%" + (s.length() + (width - s.length())/2) + "s", s));
+	public static String centerString(String str) {
+		if(str.length() >= MAX_STRING_LENGTH) return str;
+		String dest = "                    ";
+		int deb = (MAX_STRING_LENGTH - str.length())/2 ;
+		String data = new StringBuilder(dest).replace( deb, deb + str.length(), str ).toString();
+		return data;
 	}
 
 	@Override
 	public String toString() {
-		String idString = centerString(15, String.format("%s", id));
-		String brandString = centerString(10, brand);
-		String descString = centerString(30, description);
-		String priceString = centerString(10, String.format("%.2f", price));
-		String categoryName = (category != null) ? category.getName() : "";
-		String categoryString = centerString(15, categoryName);
-		return idString + brandString + descString + priceString + categoryString;
+		
+		return centerString(String.valueOf(id)) + centerString(brand) + centerString(description) +centerString(String.valueOf(price)) + centerString(category.getName());
 	}
 	
 	

@@ -13,6 +13,8 @@ import javax.persistence.OneToMany;
 public class Category implements Serializable{
 	private static final long serialVersionUID = 1L;
 
+	private static final int MAX_STRING_LENGTH = 20;
+
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	private String name;
@@ -43,15 +45,16 @@ public class Category implements Serializable{
 		this.name = name;
 	}
 	
-	public static String centerString(int width, String s) {
-		return String.format("%-" + width + "s", String.format("%" + (s.length() + (width - s.length())/2) + "s", s));
+	public static String centerString(String str) {
+		if(str.length() >= MAX_STRING_LENGTH) return str;
+		String dest = "                    ";
+		int deb = (MAX_STRING_LENGTH - str.length())/2 ;
+		String data = new StringBuilder(dest).replace( deb, deb + str.length(), str ).toString();
+		return data;
 	}
-
 	@Override
 	public String toString() {
-		String idString = centerString(15, String.format("%s", id));
-		String nameString = centerString(15, name);
-		return idString + nameString;
+		return centerString(String.valueOf(id)) + centerString(name);
 	}
 	
 	
