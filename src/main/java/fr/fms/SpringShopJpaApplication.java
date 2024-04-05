@@ -8,10 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+
 
 import fr.fms.dao.ArticleRepository;
 import fr.fms.dao.CategoryRepository;
@@ -37,16 +36,14 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 
 	@Override
 	public void run(String... args) throws Exception {
-		
 		System.out.println("Bienvenue dans mon application de gestion d'articles");
 		int choice = 0;
-		while(choice != 13) {
+		while(choice != 12) {
 			displayMenu();
-			choice = getInt();
+			choice = scanInt();
 			switch(choice) {
 			case 1 :
 				displayArticles();
-				exitMenu();
 				break;
 			case 2:
 				displayPageableArticles(pageDefault, pageSize);
@@ -56,7 +53,6 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 				break;
 			case 4:
 				displayArticle();
-				exitMenu();
 				break;
 			case 5:
 				deleteArticle();
@@ -69,7 +65,6 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 				break;
 			case 8:
 				displayCategory();
-				exitMenu();
 				break;
 			case 9:
 				deleteCategory();
@@ -85,7 +80,7 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 				System.exit(0);
 				break;
 			default:
-				System.out.println("Veuillez saisir une valeur comprise entre 1 et 12");
+				System.out.println("Veuillez saisir une valeur comprise entre 1 et 12");					
 			}
 		}
 		
@@ -176,6 +171,9 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		*/
 	}
 	
+	/**
+	 * Méthode pour afficher le menu
+	 */
 	public static void displayMenu() {
 		System.out.println("1 : Afficher tous les articles sans pagination");
 		System.out.println("2 : Afficher tous les articles avec pagination");
@@ -194,53 +192,71 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		System.out.println("12: Sortir du programme");
 	}
 	
+	/**
+	 * Méthode pour afficher la liste des articles en base avec centrage de la liste
+	 */
 	public void displayArticles() {
-		headerArticles();
+		System.out.println(Article.centerString("IDENTIFIANT") + Article.centerString("MARQUE") + Article.centerString("DESCRIPTION") + 
+							Article.centerString("PRIX") + Article.centerString("CATEGORIE"));
 		List<Article> articles = articleRepository.findAll();
 		articles.forEach(System.out::println);
+		scan.nextLine();
+		exitMenu();
 	}
 	
+	/**
+	 * Méthode permettant d'afficher la liste des articles paginées
+	 * @param nombre de pages
+	 * @param taille de chaque page
+	 */
 	public void displayPageableArticles(int pageNumber, int pageSize) {
-		headerArticles();
+		scan.nextLine();
+		System.out.println(Article.centerString("IDENTIFIANT") + Article.centerString("MARQUE") + Article.centerString("DESCRIPTION") + 
+							Article.centerString("PRIX") + Article.centerString("CATEGORIE"));
 		Page<Article> page = articleRepository.findAll(PageRequest.of(pageNumber, pageSize));
 		
 		List<Article> articles = page.getContent();
 		articles.forEach(System.out::println);
 		
 		System.out.println("PREV [ " + (pageNumber + 1) + " sur " + page.getTotalPages() + " ] NEXT");
-		scan.nextLine();
 		System.out.println("EXIT  pour sortir de la pagination");
 		System.out.println("PREV  pour afficher la page précédente");
 		System.out.println("NEXT  pour afficher la page suivante");
-		String choice = scan.nextLine().toUpperCase();
-		switch(choice) {
+		String choice = scan.nextLine();
+		switch(choice.toUpperCase()) {
 		case "EXIT":
-			displayMenu();
+			System.out.println("retour au menu principal");
 			break;
 		case "PREV":
 			if(pageNumber > 0) {
 				displayPageableArticles(pageNumber - 1, pageSize);
-				scan.nextLine();
 			}else {
 				System.out.println("Vous êtes déjà sur la première page");
+				stop();
+				displayPageableArticles(pageNumber, pageSize);
 			}
 			break;
 		case "NEXT":
 			if(pageNumber < page.getTotalPages() -1) {
 				displayPageableArticles(pageNumber + 1, pageSize);
-				scan.nextLine();
 			}else {
 				System.out.println("Vous êtes déjà sur la dernière page.");
+				stop();
+				displayPageableArticles(pageNumber, pageSize);
 			}
 			break;
 		default:
 			System.out.println("Choix invalide");
+			displayPageableArticles(pageNumber, pageSize);
 			break;
 		}
 		
 		
 	}
 	
+	/**
+	 * Méthode pour ajouter un article en base
+	 */
 	public void addArticle() {
 		scan.nextLine();
 		System.out.println("Saisir la marque de l'article");
@@ -248,147 +264,223 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		System.out.println("Saisir la description de l'article");
 		String description = scan.nextLine();
 		System.out.println("Saisir le prix de l'article");
-		double price = getInt();
+		double price = scan.nextDouble();
 		displayCategories();
 		System.out.println("Saisir l'id de la catégorie de l'article");
-		Long categoryId = (long) getInt();
+		Long categoryId = (long) scanInt();
 		Category category = categoryRepository.getById(categoryId);
 		articleRepository.save(new Article(brand, description, price, category));
 	}
 	
+	/**
+	 * Méthode pour afficher un article
+	 */
 	public void displayArticle() {
 		displayArticles();
-		System.out.println("Saisir l'id de l'article");
-		Long articleId = (long) getInt();
-		Optional<Article> article = articleRepository.findById(articleId);
-		System.out.println(article);
+		Optional<Article> article = getArticle();
+		if(article.isPresent()) {
+			System.out.println(article);
+			exitMenu();
+		}else {
+			System.out.println("cet article n'existe pas !");
+		}
 	}
 	
+	/**
+	 * Méthode pour supprimer un article en base avec vérification
+	 * que l'article est présent en base
+	 */
 	public void deleteArticle() {
 		displayArticles();
-		System.out.println("Saisir l'id de l'article à supprimer");
-		Long articleId = (long) getInt();
-		Optional<Article> article = articleRepository.findById(articleId);
+		Optional<Article> article = getArticle();
 		if(article.isPresent()) {
 			System.out.println("Voulez supprimer l'article " + article.get().getBrand() + " " 
 					+ article.get().getDescription() + " ?(Oui/Non)");
 			scan.nextLine();
 			String response = scan.nextLine();
 			if(response.equalsIgnoreCase("Oui")) {
-				articleRepository.deleteById(articleId);
-			}else {
-				displayMenu();
-			}			
+				articleRepository.deleteById(article.get().getId());
+			}		
 		}else {
 			System.out.println("Cet article n'existe pas !");
 		}
 	}
 	
+	/**
+	 * Méthode de mise à jour d'un article avec une vérification de sa présence en base
+	 */
 	public void updateArticle() {
 		displayArticles();
-		System.out.println("Saisir l'id de l'article à modifier");
-		Long articleId = (long) getInt();
-		scan.nextLine();
-		System.out.println("Saisir la marque");
-		String brand = scan.nextLine();
-		System.out.println("Saisir la description");
-		String description = scan.nextLine();
-		System.out.println("Saisir le prix");
-		double price = getInt();
+		Optional<Article> article = getArticle();
+		if(article.isPresent()) {
+			scan.nextLine();
+			System.out.println("Saisir la marque");
+			String brand = scan.nextLine();
+			System.out.println("Saisir la description");
+			String description = scan.nextLine();
+			System.out.println("Saisir le prix");
+			double price = scan.nextDouble();
+			
+			articleRepository.updateById(article.get().getId(), brand, description, price);
+			System.out.println("L'article " + article.get().getBrand() + " " + article.get().getDescription() + " a bien été modifié");
+			stop();
+		}else {
+			System.out.println("cet article n'existe pas !");
+			stop();
+		}
 		
-		articleRepository.updateById(articleId, brand, description, price);
 	}
 	
+	/**
+	 * Méthode qui permet de récupérer l'article en base en fonction de l'id
+	 * @return l'article trouvé
+	 */
+	public Optional<Article> getArticle(){
+		System.out.println("Saisir l'id de l'article");
+		Long articleId = (long) scanInt();
+		Optional<Article> article = articleRepository.findById(articleId);
+		return article;
+	}
+	
+	/**
+	 * Méthode pour afficher toutes les catégories
+	 */
 	public void displayCategories() {
-		headerCategories();
+		System.out.println( Category.centerString("IDENTIFIANT") + Category.centerString("NAME"));
 		List<Category> categories = categoryRepository.findAll();
 		categories.forEach(System.out::println);
 	}
 	
-	public Optional<Category> getCategory() {
-		System.out.println("Saisir l'id de la categorie");
-		Long catgoryId = (long) getInt();
-		Optional<Category> category = categoryRepository.findById(catgoryId);
-		return category;
-	}
-	
+	/**
+	 * Méthode pour ajouter une catégorie avec vérification si le nom est déjà pris
+	 */
 	public void addCategory() {
 		scan.nextLine();
 		System.out.println("Saisir le nom de la catégorie à ajouter");
 		String name = scan.nextLine();
-		categoryRepository.save(new Category(name));
+		Optional<Category> category = categoryRepository.findByName(name);
+		if(category.isPresent()) {
+			System.out.println("ce nom est déjà pris");
+			stop();
+		}else {
+			categoryRepository.save(new Category(name));			
+			System.out.println("La catégorie a bien été créée");
+		}
+		
 	}
 	
+	/**
+	 * Méthode pour afficher une catégorie
+	 */
 	public void displayCategory() {
 		displayCategories();
 		Optional<Category> category = getCategory();
 		System.out.println(category);
+		exitMenu();
 	}
 	
+	/**
+	 * Méthode pour supprimer une catégorie en vérifiant sa présence en base
+	 */
 	public void deleteCategory() {
 		displayCategories();
-		System.out.println("Saisir l'id de la catégorie à supprimer");
-		Long categoryId = (long) getInt();
-		scan.nextLine();
-		System.out.println("Voulez-vous supprimer la catégorie " + categoryRepository.findById(categoryId).get().getName() + " ?(Oui/Non)");
-		String response = scan.nextLine();
-		if(response.equalsIgnoreCase("Oui")){
-			categoryRepository.deleteById(categoryId);
+		Optional<Category> category = getCategory();
+		if(category.isPresent()) {
+			scan.nextLine();
+			System.out.println("Voulez-vous supprimer la catégorie " + category.get().getName() + " ?(Oui/Non)");
+			String response = scan.nextLine();
+			if(response.equalsIgnoreCase("Oui")){
+				categoryRepository.deleteById(category.get().getId());
+				System.out.println("La catégorie " + category.get().getName() + " a bien été supprimée");
+				stop();
+			}		
 		}else {
-			displayMenu();
+			System.out.println("cette catégorie n'existe pas !");
+			stop();
 		}
 	}
 	
+	/**
+	 * Méthode de mise à jour d'une catégorie avec une vérification que la catégorie
+	 * est présente en base
+	 */
 	public void updateCategory() {
 		displayCategories();
-		System.out.println("Saisir l'id de la catégorie à modifier");
-		Long categoryId = (long) getInt();
-		scan.nextLine();
-		System.out.println("Saisir le nom de la catégorie");
-		String name = scan.nextLine();
-		
-		categoryRepository.updateById(categoryId, name);
+		Optional<Category> category = getCategory();
+		if(category.isPresent()) {
+			scan.nextLine();
+			System.out.println("Saisir le nom de la catégorie");
+			String name = scan.nextLine();
+			categoryRepository.updateById(category.get().getId(), name);
+			System.out.println("La catégorie " + category.get().getName() + " a bien été ajoutée");
+			stop();
+		}else {
+			System.out.println("cette catégorie n'existe pas !");
+			stop();
+		}
 	}
 	
+	/**
+	 * Méthode pour afficher tous les articles d'une catégories
+	 * et vérification si des articles appartiennent à une catégorie
+	 */
 	public void displayArticlesByCategory() {
 		displayCategories();
 		System.out.println("Saisir l'id de la catégorie");
-		Long categoryId = (long) getInt();
+		Long categoryId = (long) scanInt();
 		List<Article> articles = articleRepository.findByCategoryId(categoryId);
 		if(articles.isEmpty()) {
 			System.out.println("Aucun article ne correspond à cette catégorie");
-		}else {			
+		}else{
+			System.out.println(Article.centerString("IDENTIFIANT") + Article.centerString("MARQUE") + 
+					Article.centerString("DESCRIPTION") + Article.centerString("PRIX") + Article.centerString("CATEGORIE"));
 			articles.forEach(System.out::println);
 		}
 	}
 	
+	/**
+	 * Méthode pour récupérer la catégorie en fonction de l'id
+	 * @return catégorie
+	 */
+	public Optional<Category> getCategory() {
+		System.out.println("Saisir l'id de la categorie");
+		Long catgoryId = (long) scanInt();
+		Optional<Category> category = categoryRepository.findById(catgoryId);
+		return category;
+	}
+	
+	/**
+	 * Méthode pour revenir au menu principal
+	 */
 	public void exitMenu() {
 		System.out.println("EXIT  pour revenir au menu précédent");
-		scan.nextLine();
 		String response = scan.nextLine();
 		if(response.equalsIgnoreCase("EXIT")) {
-			displayMenu();
+			System.out.println("retour au menu principal");
 		}
 	}
 	
-	public void headerArticles() {
-		String header = String.format("%s%s%s%s%s", Article.centerString(15, "IDENTIFIANT"), Article.centerString(10, "MARQUE"), 
-								Article.centerString(30, "DESCRIPTION"), Article.centerString(10, "PRIX"), Article.centerString(15, "CATEGORIE"));
-		System.out.println(header);
+	/**
+	 * Méthode pour donner un temps d'attente afin de lire les infos
+	 */
+	public void stop() {
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
-	public void headerCategories() {
-		String header = String.format("%s%s", Category.centerString(15, "IDENTIFIANT"), Category.centerString(15, "NAME"));
-		System.out.println(header);
-	}
-	
-	public static int getInt() {
-		if(!scan.hasNextInt()) {
+	/**
+	 * Méthode de vérification de saisie d'un entier
+	 * @return 
+	 */
+	public static int scanInt() {
+		while(!scan.hasNextInt()) {
 			System.out.println("Saississez une valeur entière !!");
 			scan.next();
 		}
 		
 		return scan.nextInt();
 	} 
-
 }
