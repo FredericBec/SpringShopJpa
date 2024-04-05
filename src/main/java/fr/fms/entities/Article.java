@@ -76,10 +76,20 @@ public class Article implements Serializable{
 	public void setPrice(double price) {
 		this.price = price;
 	}
+	
+	public static String centerString(int width, String s) {
+		return String.format("%-" + width + "s", String.format("%" + (s.length() + (width - s.length())/2) + "s", s));
+	}
 
 	@Override
 	public String toString() {
-		return "Article [id=" + id + ", brand=" + brand + ", description=" + description + ", price=" + price + "]";
+		String idString = centerString(15, String.format("%s", id));
+		String brandString = centerString(10, brand);
+		String descString = centerString(30, description);
+		String priceString = centerString(10, String.format("%.2f", price));
+		String categoryName = (category != null) ? category.getName() : "";
+		String categoryString = centerString(15, categoryName);
+		return idString + brandString + descString + priceString + categoryString;
 	}
 	
 	

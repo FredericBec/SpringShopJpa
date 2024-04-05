@@ -42,10 +42,16 @@ public class Category implements Serializable{
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public static String centerString(int width, String s) {
+		return String.format("%-" + width + "s", String.format("%" + (s.length() + (width - s.length())/2) + "s", s));
+	}
 
 	@Override
 	public String toString() {
-		return "Category [id=" + id + ", name=" + name + "]";
+		String idString = centerString(15, String.format("%s", id));
+		String nameString = centerString(15, name);
+		return idString + nameString;
 	}
 	
 	
