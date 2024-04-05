@@ -9,6 +9,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import fr.fms.dao.ArticleRepository;
@@ -26,6 +28,8 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 	private ArticleRepository articleRepository;
 	
 	private static Scanner scan = new Scanner(System.in);
+	private int pageDefault = 0;
+	private int pageSize = 5;
 	
 	public static void main(String[] args) {
 		SpringApplication.run(SpringShopJpaApplication.class, args);
@@ -45,12 +49,14 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 				exitMenu();
 				break;
 			case 2:
+				displayPageableArticles(pageDefault, pageSize);
 				break;
 			case 3:
 				addArticle();
 				break;
 			case 4:
 				displayArticle();
+				exitMenu();
 				break;
 			case 5:
 				deleteArticle();
@@ -59,14 +65,21 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 				updateArticle();
 				break;
 			case 7:
+				addCategory();
 				break;
 			case 8:
+				displayCategory();
+				exitMenu();
 				break;
 			case 9:
+				deleteCategory();
 				break;
 			case 10:
+				updateCategory();
 				break;
 			case 11:
+				displayArticlesByCategory();
+				exitMenu();
 				break;
 			case 12:
 				System.exit(0);
@@ -182,11 +195,49 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 	}
 	
 	public void displayArticles() {
+		headerArticles();
 		List<Article> articles = articleRepository.findAll();
 		articles.forEach(System.out::println);
 	}
 	
-	public void displayPageableArticles() {
+	public void displayPageableArticles(int pageNumber, int pageSize) {
+		headerArticles();
+		Page<Article> page = articleRepository.findAll(PageRequest.of(pageNumber, pageSize));
+		
+		List<Article> articles = page.getContent();
+		articles.forEach(System.out::println);
+		
+		System.out.println("PREV [ " + (pageNumber + 1) + " sur " + page.getTotalPages() + " ] NEXT");
+		scan.nextLine();
+		System.out.println("EXIT  pour sortir de la pagination");
+		System.out.println("PREV  pour afficher la page précédente");
+		System.out.println("NEXT  pour afficher la page suivante");
+		String choice = scan.nextLine().toUpperCase();
+		switch(choice) {
+		case "EXIT":
+			displayMenu();
+			break;
+		case "PREV":
+			if(pageNumber > 0) {
+				displayPageableArticles(pageNumber - 1, pageSize);
+				scan.nextLine();
+			}else {
+				System.out.println("Vous êtes déjà sur la première page");
+			}
+			break;
+		case "NEXT":
+			if(pageNumber < page.getTotalPages() -1) {
+				displayPageableArticles(pageNumber + 1, pageSize);
+				scan.nextLine();
+			}else {
+				System.out.println("Vous êtes déjà sur la dernière page.");
+			}
+			break;
+		default:
+			System.out.println("Choix invalide");
+			break;
+		}
+		
 		
 	}
 	
@@ -201,8 +252,8 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		displayCategories();
 		System.out.println("Saisir l'id de la catégorie de l'article");
 		Long categoryId = (long) getInt();
-		
-		articleRepository.save(new Article(brand, description, price, getCategory(categoryId)));
+		Category category = categoryRepository.getById(categoryId);
+		articleRepository.save(new Article(brand, description, price, category));
 	}
 	
 	public void displayArticle() {
@@ -217,13 +268,19 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		displayArticles();
 		System.out.println("Saisir l'id de l'article à supprimer");
 		Long articleId = (long) getInt();
-		System.out.println("Voulez supprimer l'article " + articleRepository.findById(articleId).get().getBrand() + articleRepository.findById(articleId).get().getDescription());
-		scan.nextLine();
-		String response = scan.nextLine();
-		if(response.equalsIgnoreCase("Oui")) {
-			articleRepository.deleteById(articleId);
+		Optional<Article> article = articleRepository.findById(articleId);
+		if(article.isPresent()) {
+			System.out.println("Voulez supprimer l'article " + article.get().getBrand() + " " 
+					+ article.get().getDescription() + " ?(Oui/Non)");
+			scan.nextLine();
+			String response = scan.nextLine();
+			if(response.equalsIgnoreCase("Oui")) {
+				articleRepository.deleteById(articleId);
+			}else {
+				displayMenu();
+			}			
 		}else {
-			displayMenu();
+			System.out.println("Cet article n'existe pas !");
 		}
 	}
 	
@@ -238,21 +295,71 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		String description = scan.nextLine();
 		System.out.println("Saisir le prix");
 		double price = getInt();
-		displayCategories();
-		System.out.println("Saisir l'id de la catégorie");
-		Long categoryId = (long) getInt();
 		
-		articleRepository.updateById(articleId, brand, description, price, getCategory(categoryId));
+		articleRepository.updateById(articleId, brand, description, price);
 	}
 	
 	public void displayCategories() {
+		headerCategories();
 		List<Category> categories = categoryRepository.findAll();
 		categories.forEach(System.out::println);
 	}
 	
-	public Category getCategory(Long id) {
-		Category category = categoryRepository.getById(id);
+	public Optional<Category> getCategory() {
+		System.out.println("Saisir l'id de la categorie");
+		Long catgoryId = (long) getInt();
+		Optional<Category> category = categoryRepository.findById(catgoryId);
 		return category;
+	}
+	
+	public void addCategory() {
+		scan.nextLine();
+		System.out.println("Saisir le nom de la catégorie à ajouter");
+		String name = scan.nextLine();
+		categoryRepository.save(new Category(name));
+	}
+	
+	public void displayCategory() {
+		displayCategories();
+		Optional<Category> category = getCategory();
+		System.out.println(category);
+	}
+	
+	public void deleteCategory() {
+		displayCategories();
+		System.out.println("Saisir l'id de la catégorie à supprimer");
+		Long categoryId = (long) getInt();
+		scan.nextLine();
+		System.out.println("Voulez-vous supprimer la catégorie " + categoryRepository.findById(categoryId).get().getName() + " ?(Oui/Non)");
+		String response = scan.nextLine();
+		if(response.equalsIgnoreCase("Oui")){
+			categoryRepository.deleteById(categoryId);
+		}else {
+			displayMenu();
+		}
+	}
+	
+	public void updateCategory() {
+		displayCategories();
+		System.out.println("Saisir l'id de la catégorie à modifier");
+		Long categoryId = (long) getInt();
+		scan.nextLine();
+		System.out.println("Saisir le nom de la catégorie");
+		String name = scan.nextLine();
+		
+		categoryRepository.updateById(categoryId, name);
+	}
+	
+	public void displayArticlesByCategory() {
+		displayCategories();
+		System.out.println("Saisir l'id de la catégorie");
+		Long categoryId = (long) getInt();
+		List<Article> articles = articleRepository.findByCategoryId(categoryId);
+		if(articles.isEmpty()) {
+			System.out.println("Aucun article ne correspond à cette catégorie");
+		}else {			
+			articles.forEach(System.out::println);
+		}
 	}
 	
 	public void exitMenu() {
@@ -262,6 +369,17 @@ public class SpringShopJpaApplication implements CommandLineRunner{
 		if(response.equalsIgnoreCase("EXIT")) {
 			displayMenu();
 		}
+	}
+	
+	public void headerArticles() {
+		String header = String.format("%s%s%s%s%s", Article.centerString(15, "IDENTIFIANT"), Article.centerString(10, "MARQUE"), 
+								Article.centerString(30, "DESCRIPTION"), Article.centerString(10, "PRIX"), Article.centerString(15, "CATEGORIE"));
+		System.out.println(header);
+	}
+	
+	public void headerCategories() {
+		String header = String.format("%s%s", Category.centerString(15, "IDENTIFIANT"), Category.centerString(15, "NAME"));
+		System.out.println(header);
 	}
 	
 	public static int getInt() {
