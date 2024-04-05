@@ -1,6 +1,7 @@
 package fr.fms.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -16,6 +17,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long>{
 	public List<Category> findByOrderByNameAsc();
 	
 	public List<Category> findByOrderByNameDesc();
+	
+	public Optional<Category> findByName(String name);
 	
 	public void deleteById(Long id);
 	
